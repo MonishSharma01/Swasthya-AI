@@ -1,0 +1,22 @@
+name: 📝 Documentation Issue
+description: Report a documentation issue or request updates.
+labels: [docs]
+body:
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target Area
+      options:
+        - Installation Guide
+        - API Reference
+        - User Dashboard Guide
+        - General Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Documentation Description
+      description: Explain what needs to be documented or corrected.
+    validations:
+      required: true

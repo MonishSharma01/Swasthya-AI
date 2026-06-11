@@ -8,35 +8,82 @@ on:
     paths: ['app/**']
 
 jobs:
-  build:
+  audit:
+    name: Dependency Audit
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: app
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
       - name: Security audit
         run: npm audit --audit-level=critical || true
 
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
       - name: Type check
         run: npx tsc --noEmit
 
+  lint:
+    name: ESLint Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
       - name: Lint check
         run: npm run lint
 
+  build:
+    name: Production Export Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
       - name: Production Build Check
         run: npx expo export --platform web

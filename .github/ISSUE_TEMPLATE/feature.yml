@@ -1,0 +1,21 @@
+name: 🚀 Feature / Enhancement
+description: Suggest a new feature or enhancement.
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Suggestion Type
+      options:
+        - New Feature
+        - Enhancement
+        - Performance Optimization
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain the feature or enhancement you would like to see.
+    validations:
+      required: true

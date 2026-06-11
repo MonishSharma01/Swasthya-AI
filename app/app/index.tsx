@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/store/auth.store';
 import { Redirect } from 'expo-router';
 
+// CI Test Change: Trigger App CI
 export default function Index() {
   const { isLoggedIn, hasProfile, hasFamilyGroup } = useAuthStore();
 

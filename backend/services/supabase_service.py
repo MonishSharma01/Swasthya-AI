@@ -6,13 +6,8 @@ from datetime import datetime
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
-
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-else:
-    supabase = None
+SUPABASE_URL = os.getenv("SUPABASE_URL") or "https://placeholder.supabase.co"
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or "placeholder-anon-key"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
