@@ -3,7 +3,7 @@ import { ScreenIntroGate } from '@/components/ui/ScreenIntroGate';
 import { SkeletonMedsScreen } from '@/components/ui/SkeletonLoader';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSegments } from 'expo-router';
+import { useSegments, router } from 'expo-router';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView, ScrollView, StatusBar, StyleSheet,
@@ -78,7 +78,7 @@ const WeekCalendar = () => {
   const today = new Date().getDay();
   return (
     <View style={styles.calendarCard}>
-      <Text style={styles.cardTitle}>📅 This Week's Adherence</Text>
+      <Text style={styles.cardTitle}>📅 This Week&apos;s Adherence</Text>
       <View style={styles.weekRow}>
         {DAYS.map((day, i) => (
           <View key={i} style={styles.dayCol}>
@@ -453,9 +453,9 @@ export default function MedsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <TopNavBar
-        onScanPress={() => { }}
+        onScanPress={() => router.push({ pathname: '/(tabs)/home', params: { scan: 'true' } })}
         onNotificationPress={() => { }}
-        onProfilePress={() => { }}
+        onProfilePress={() => router.push('/(tabs)/profile')}
         notificationCount={3}
         userName="Rahul"
         activeScreen={currentRoute}
@@ -482,7 +482,7 @@ export default function MedsScreen() {
             <WeekCalendar />
             <AnalyticsCard />
 
-            <Text style={styles.sectionLabel}>Today's Medications</Text>
+            <Text style={styles.sectionLabel}>Today&apos;s Medications</Text>
             {medications.map((med, index) => (
               <View key={med.id || index} style={styles.medCard}>
                 <View style={styles.medInfo}>

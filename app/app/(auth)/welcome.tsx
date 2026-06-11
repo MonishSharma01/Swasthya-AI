@@ -32,7 +32,7 @@ const { width, height } = Dimensions.get('window');
 // SmoothTypingText component
 const SmoothTypingText = ({ text, style, isActive }: any) => {
   const [displayText, setDisplayText] = useState('');
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<any>(null);
   
   useEffect(() => {
     if (intervalRef.current) {

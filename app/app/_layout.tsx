@@ -68,7 +68,7 @@ export default function RootLayout() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (!mounted) return;
 
       if (!session) {

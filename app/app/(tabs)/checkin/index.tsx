@@ -1,7 +1,7 @@
 // app/(tabs)/checkin/index.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSegments } from 'expo-router';
+import { useSegments, router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet,
@@ -181,9 +181,9 @@ export default function CheckinScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <TopNavBar
-        onScanPress={() => {}}
+        onScanPress={() => router.push({ pathname: '/(tabs)/home', params: { scan: 'true' } })}
         onNotificationPress={() => {}}
-        onProfilePress={() => {}}
+        onProfilePress={() => router.push('/(tabs)/profile')}
         notificationCount={3}
         userName="Rahul"
         activeScreen={currentRoute}

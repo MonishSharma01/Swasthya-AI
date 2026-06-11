@@ -303,9 +303,9 @@ export default function ProfileScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       
       <TopNavBar 
-        onScanPress={() => console.log('Scan pressed')}
+        onScanPress={() => router.push({ pathname: '/(tabs)/home', params: { scan: 'true' } })}
         onNotificationPress={() => console.log('Notification pressed')}
-        onProfilePress={() => console.log('Profile pressed')}
+        onProfilePress={() => {}}
         notificationCount={3}
         userName={profile?.name || "User"}
         activeScreen={currentRoute}

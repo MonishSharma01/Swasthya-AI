@@ -17,7 +17,7 @@ export const FamilyMemberCard = ({ name, age, riskLevel, riskScore }: Props) => 
     <Text style={styles.age}>Age {age}</Text>
     <View style={styles.row}>
       <Badge
-        label={riskLevel}
+        text={riskLevel}
         color={riskLevel === 'High' ? 'red' : riskLevel === 'Elevated' ? 'orange' : riskLevel === 'Moderate' ? 'yellow' : 'green'}
       />
       <Text style={styles.score}>{riskScore}</Text>

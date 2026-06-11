@@ -23,7 +23,7 @@ export const RiskScoreCard = ({ score, level, reason }: RiskScoreCardProps) => {
     <LinearGradient colors={GRADIENTS.primary} style={styles.card}>
       <Text style={styles.label}>Your Health Score</Text>
       <Text style={styles.score}>{score}</Text>
-      <Badge label={level} color={badgeColor as 'red'} />
+      <Badge text={level} color={badgeColor as 'red'} />
       <Text style={styles.reason}>{reason}</Text>
     </LinearGradient>
   );

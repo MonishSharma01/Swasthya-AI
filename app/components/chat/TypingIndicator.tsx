@@ -23,7 +23,7 @@ export const TypingIndicator: React.FC = () => {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
   };
 
   useEffect(() => {

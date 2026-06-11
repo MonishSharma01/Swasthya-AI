@@ -2,7 +2,7 @@
 import { COLORS, GRADIENTS, SPACING } from '@/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle, TouchableOpacity } from 'react-native';
 
 interface CardProps {
   children: React.ReactNode;

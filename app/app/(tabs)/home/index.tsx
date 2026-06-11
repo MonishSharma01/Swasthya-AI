@@ -8,7 +8,7 @@ import { ScreenIntroGate } from '@/components/ui/ScreenIntroGate';
 import { SkeletonHomeScreen } from '@/components/ui/SkeletonLoader';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useSegments } from 'expo-router';
+import { router, useSegments, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   Alert,
@@ -494,6 +494,7 @@ export default function HomeScreen() {
   const segments = useSegments();
   const currentRoute = segments[segments.length - 1];
   const { user, patientId } = useAuthStore();
+  const { scan } = useLocalSearchParams<{ scan?: string }>();
   const [profile, setProfile] = useState<any>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [bodyMapVisible, setBodyMapVisible] = useState(false);
@@ -515,6 +516,13 @@ export default function HomeScreen() {
       setIsLoadingProfile(false);
     }
   }, [user, patientId]);
+
+  useEffect(() => {
+    if (scan === 'true') {
+      router.setParams({ scan: undefined });
+      void handleScanReport();
+    }
+  }, [scan]);
 
   const fetchProfile = async () => {
     try {

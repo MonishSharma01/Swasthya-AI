@@ -9,6 +9,9 @@ export interface BodyZone {
   severity: 'low' | 'medium' | 'high';
   description: string;
   symptoms: string[];
+  riskLevel?: 'low' | 'medium' | 'high';
+  lastLogged?: string;
+  aiRecommendation?: string;
 }
 
 export const BODY_ZONES: BodyZone[] = [
@@ -124,4 +127,12 @@ export const SEVERITY_LABELS = {
   low: 'Low Risk',
   medium: 'Moderate',
   high: 'High Risk',
+};
+
+export const getRiskLevelColor = (severity: 'low' | 'medium' | 'high' | string) => {
+  return SEVERITY_COLORS[severity as keyof typeof SEVERITY_COLORS] || '#10b981';
+};
+
+export const getRiskLevelLabel = (severity: 'low' | 'medium' | 'high' | string) => {
+  return SEVERITY_LABELS[severity as keyof typeof SEVERITY_LABELS] || 'Low Risk';
 };

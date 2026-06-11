@@ -6,11 +6,13 @@ import { StyleSheet, Text, View } from 'react-native';
 type BadgeColor = 'blue' | 'green' | 'red' | 'orange' | 'yellow' | 'gray';
 
 interface BadgeProps {
-  text: string;
+  text?: string;
+  label?: string;
   color?: BadgeColor;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ text, color = 'blue' }) => {
+export const Badge: React.FC<BadgeProps> = ({ text, label, color = 'blue' }) => {
+  const badgeText = text || label || '';
   const getColorStyles = () => {
     switch (color) {
       case 'blue':
@@ -32,7 +34,7 @@ export const Badge: React.FC<BadgeProps> = ({ text, color = 'blue' }) => {
 
   return (
     <View style={[styles.badge, { backgroundColor: colors.bg }]}>
-      <Text style={[styles.text, { color: colors.text }]}>{text}</Text>
+      <Text style={[styles.text, { color: colors.text }]}>{badgeText}</Text>
     </View>
   );
 };

@@ -3,17 +3,13 @@ import { Platform } from 'react-native';
 
 /**
  * BACKEND_URL Configuration
- * - 10.0.2.2 is the IP of the special gateway to localhost on Android Emulator.
- * - localhost or 127.0.0.1 works for iOS Simulator.
- * - Use your machine's LOCAL IP (e.g., 192.168.1.33) if testing on a PHYSICAL device.
+ * - Loaded from EXPO_PUBLIC_BACKEND_URL if set.
+ * - Otherwise falls back to localhost or 10.0.2.2 depending on platform.
  */
-const PHYSICAL_DEVICE_IP = '192.168.1.33'; // Discovered active local IP
 const EMULATOR_IP = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+const ENV_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-// CHANGE THIS TO TRUE IF TESTING ON A REAL PHONE
-const IS_PHYSICAL_DEVICE = true; 
-
-export const BACKEND_URL = `http://${IS_PHYSICAL_DEVICE ? PHYSICAL_DEVICE_IP : EMULATOR_IP}:8000`;
+export const BACKEND_URL = ENV_BACKEND_URL || `http://${EMULATOR_IP}:8000`;
 
 export const API_ENDPOINTS = {
     AUTH: {

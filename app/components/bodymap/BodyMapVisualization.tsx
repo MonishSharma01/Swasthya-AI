@@ -166,8 +166,8 @@ const BodyMapSVG = ({ selectedZone, onZoneSelect }: { selectedZone: string | nul
 
 // Zone Info Panel Component
 const ZoneInfoPanel = ({ zone, onClose }: { zone: BodyZone; onClose: () => void }) => {
-  const riskColor = getRiskLevelColor(zone.riskLevel);
-  const riskLabel = getRiskLevelLabel(zone.riskLevel);
+  const riskColor = getRiskLevelColor(zone.riskLevel || zone.severity || 'low');
+  const riskLabel = getRiskLevelLabel(zone.riskLevel || zone.severity || 'low');
 
   return (
     <View style={[styles.infoPanelContainer, { backgroundColor: '#1a1a1a' }]}>
@@ -205,7 +205,7 @@ const ZoneInfoPanel = ({ zone, onClose }: { zone: BodyZone; onClose: () => void 
         {/* Last Logged */}
         <View style={styles.infoPanelSection}>
           <Text style={styles.sectionTitle}>Last Logged</Text>
-          <Text style={styles.lastLoggedText}>{zone.lastLogged}</Text>
+          <Text style={styles.lastLoggedText}>{zone.lastLogged || 'Not logged recently'}</Text>
         </View>
 
         {/* AI Recommendation */}
@@ -214,7 +214,7 @@ const ZoneInfoPanel = ({ zone, onClose }: { zone: BodyZone; onClose: () => void 
             <Ionicons name="sparkles" size={14} color="#60a5fa" />
             <Text style={styles.aiRecTitle}>AI Recommendation</Text>
           </View>
-          <Text style={styles.aiRecText}>{zone.aiRecommendation}</Text>
+          <Text style={styles.aiRecText}>{zone.aiRecommendation || zone.description}</Text>
         </View>
       </LinearGradient>
     </View>

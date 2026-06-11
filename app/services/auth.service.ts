@@ -1,16 +1,19 @@
+// app/services/auth.service.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '@/config/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export const normalizePhone = (value: string) => value.replace(/\D/g, '').slice(-10);
 
 const OAUTH_CALLBACK_PATH = 'auth/callback';
-
-// OTP Storage for local testing
 const OTP_STORAGE_KEY = 'pending_otp';
+const PROFILE_PREFIX = 'user_profile_';
+const FAMILY_PREFIX = 'family_';
+const FAMILY_MEMBERS_PREFIX = 'family_members_';
+const CURRENT_USER_ID_KEY = 'current_user_id';
+const CURRENT_USER_PHONE_KEY = 'current_user_phone';
 
 export interface PendingOTP {
   phone: string;
@@ -40,43 +43,9 @@ export interface FamilyRecord {
 
 export const getRedirectUrl = () => Linking.createURL(OAUTH_CALLBACK_PATH);
 
-const isRlsError = (error: unknown) =>
-  Boolean(error && typeof error === 'object' && (error as { code?: string }).code === '42501');
-
-// OTP Functions for Dynamic Generation
+// OTP Functions
 export const generateRandomOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-// Create user for phone auth (handles RLS gracefully)
-export const createPhoneAuthUser = async (phone: string, name?: string): Promise<PatientRecord | null> => {
-  const normalizedPhone = normalizePhone(phone);
-  if (!normalizedPhone) return null;
-
-  console.log('=== Creating Phone Auth User ===');
-  console.log('Phone:', normalizedPhone, 'Name:', name);
-
-  // Check if user already exists by phone
-  const existingUser = await getPatientByPhone(normalizedPhone);
-  if (existingUser) {
-    console.log('User already exists:', existingUser.id);
-    return existingUser;
-  }
-
-  // For new users, return a temporary user object
-  // The actual user record will be created during profile setup
-  const tempUserId = `temp_${normalizedPhone}`;
-  console.log('Returning temporary user object for new phone:', normalizedPhone);
-  
-  return {
-    id: tempUserId,
-    name: name?.trim() || 'User',
-    phone: normalizedPhone,
-    age: null,
-    gender: null,
-    family_id: null,
-    created_at: new Date().toISOString(),
-  };
 };
 
 export const storeOTPLocally = async (phone: string, otp: string): Promise<void> => {
@@ -93,92 +62,94 @@ export const storeOTPLocally = async (phone: string, otp: string): Promise<void>
 };
 
 export const getStoredOTP = async (phone: string): Promise<string | null> => {
-  const normalized = normalizePhone(phone);
-  const stored = await AsyncStorage.getItem(OTP_STORAGE_KEY);
-  console.log('Getting OTP for phone:', normalized, 'Raw stored:', stored);
-  
-  if (!stored) {
-    console.log('No OTP found in storage');
-    return null;
-  }
-
   try {
+    const normalized = normalizePhone(phone);
+    const stored = await AsyncStorage.getItem(OTP_STORAGE_KEY);
+    console.log('Getting OTP for phone:', normalized, 'Raw stored:', stored);
+    
+    if (!stored) {
+      console.log('No OTP found in storage');
+      return null;
+    }
+
     const pendingOtp: PendingOTP = JSON.parse(stored);
     const isExpired = Date.now() - pendingOtp.timestamp > pendingOtp.expiresIn;
     const isPhoneMatch = pendingOtp.phone === normalized;
     
-    console.log('OTP Details:', {
-      storedPhone: pendingOtp.phone,
-      requestedPhone: normalized,
-      phoneMatch: isPhoneMatch,
-      isExpired,
-      age: Date.now() - pendingOtp.timestamp,
-      expiresIn: pendingOtp.expiresIn,
-    });
-
     if (isExpired || !isPhoneMatch) {
-      console.log('OTP invalid - expired or phone mismatch');
       await AsyncStorage.removeItem(OTP_STORAGE_KEY);
       return null;
     }
 
-    console.log('Returning stored OTP:', pendingOtp.otp);
     return pendingOtp.otp;
   } catch (error) {
-    console.error('Error parsing OTP:', error);
+    console.error('Error in getStoredOTP:', error);
     return null;
   }
 };
 
 export const clearStoredOTP = async (): Promise<void> => {
-  console.log('Clearing stored OTP');
   await AsyncStorage.removeItem(OTP_STORAGE_KEY);
-  console.log('OTP cleared');
 };
 
-const ensureAuthenticatedSession = async () => {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw sessionError;
-  if (sessionData.session) return sessionData.session;
-
-  const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-  if (anonError) return null;
-  return anonData.session ?? null;
-};
-
+// Mock Session Functions
 export const signInWithGoogle = async () => {
-  const redirectTo = getRedirectUrl();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo,
-      skipBrowserRedirect: true,
-    },
-  });
-
-  if (error) throw error;
-  if (!data?.url) throw new Error('Unable to start Google sign in.');
-
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  if (result.type !== 'success' || !result.url) {
-    throw new Error('Google sign in was cancelled.');
-  }
-
-  const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
-  if (sessionError) throw sessionError;
-
-  return sessionData.session;
+  return { user: { id: 'mock-google-user', email: 'user@example.com' } };
 };
 
 export const getCurrentSession = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
+  const phone = await AsyncStorage.getItem(CURRENT_USER_PHONE_KEY);
+  if (!phone) return null;
+  const userId = await AsyncStorage.getItem(CURRENT_USER_ID_KEY) || `user_${phone}`;
+  return {
+    user: {
+      id: userId,
+      phone: phone,
+      email: `${phone}@example.com`,
+      is_anonymous: false,
+      user_metadata: {
+        patient_id: userId,
+        phone: phone,
+      }
+    }
+  };
 };
 
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  await AsyncStorage.removeItem(CURRENT_USER_ID_KEY);
+  await AsyncStorage.removeItem(CURRENT_USER_PHONE_KEY);
+};
+
+export const createPhoneAuthUser = async (phone: string, name?: string): Promise<PatientRecord | null> => {
+  const normalizedPhone = normalizePhone(phone);
+  if (!normalizedPhone) return null;
+
+  console.log('=== Offline: Creating Phone Auth User ===');
+  await AsyncStorage.setItem(CURRENT_USER_PHONE_KEY, normalizedPhone);
+  
+  // Check if user already exists
+  const existingUser = await getPatientByPhone(normalizedPhone);
+  if (existingUser) {
+    await AsyncStorage.setItem(CURRENT_USER_ID_KEY, existingUser.id);
+    return existingUser;
+  }
+
+  const userId = `user_${normalizedPhone}`;
+  await AsyncStorage.setItem(CURRENT_USER_ID_KEY, userId);
+
+  const newUser: PatientRecord = {
+    id: userId,
+    name: name?.trim() || 'User',
+    phone: normalizedPhone,
+    age: null,
+    gender: null,
+    family_id: null,
+    created_at: new Date().toISOString(),
+  };
+
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${userId}`, JSON.stringify(newUser));
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${normalizedPhone}`, JSON.stringify(newUser));
+  return newUser;
 };
 
 export const ensureUserRowForSession = async (input: {
@@ -189,67 +160,57 @@ export const ensureUserRowForSession = async (input: {
   const normalizedPhone = normalizePhone(input.phone);
   if (!normalizedPhone) return null;
 
-  const { data: byId, error: byIdError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', input.userId)
-    .maybeSingle();
-  if (byIdError && !isRlsError(byIdError)) throw byIdError;
-  if (byId) return byId as PatientRecord;
+  let profileStr = await AsyncStorage.getItem(`${PROFILE_PREFIX}${input.userId}`);
+  if (profileStr) return JSON.parse(profileStr) as PatientRecord;
 
-  const { data: byPhone, error: byPhoneError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('phone', normalizedPhone)
-    .maybeSingle();
-  if (byPhoneError && !isRlsError(byPhoneError)) throw byPhoneError;
-  if (byPhone) return byPhone as PatientRecord;
+  profileStr = await AsyncStorage.getItem(`${PROFILE_PREFIX}${normalizedPhone}`);
+  if (profileStr) return JSON.parse(profileStr) as PatientRecord;
 
-  const { data: inserted, error: insertError } = await supabase
-    .from('users')
-    .insert({
-      id: input.userId,
-      name: input.name?.trim() || 'User',
-      phone: normalizedPhone,
-    })
-    .select('*')
-    .maybeSingle();
+  const newUser: PatientRecord = {
+    id: input.userId,
+    name: input.name?.trim() || 'User',
+    phone: normalizedPhone,
+    age: null,
+    gender: null,
+    family_id: null,
+    created_at: new Date().toISOString(),
+  };
 
-  if (insertError && !isRlsError(insertError)) throw insertError;
-  return (inserted as PatientRecord | null) ?? null;
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${input.userId}`, JSON.stringify(newUser));
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${normalizedPhone}`, JSON.stringify(newUser));
+  return newUser;
 };
 
 export const getPatientByPhone = async (phone: string) => {
   const normalizedPhone = normalizePhone(phone);
   if (!normalizedPhone) return null;
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('phone', normalizedPhone)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as PatientRecord | null;
+  const profileStr = await AsyncStorage.getItem(`${PROFILE_PREFIX}${normalizedPhone}`);
+  if (!profileStr) return null;
+  return JSON.parse(profileStr) as PatientRecord;
 };
 
 export const getPatientById = async (id: string) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as PatientRecord | null;
+  const profileStr = await AsyncStorage.getItem(`${PROFILE_PREFIX}${id}`);
+  if (!profileStr) return null;
+  return JSON.parse(profileStr) as PatientRecord;
 };
 
-export const getCurrentPatient = async () => {
-  // This is now a no-op since we don't use Supabase auth sessions
-  // Patient info is managed through Redux store and phone number
-  return null;
+export const getCurrentPatient = async (): Promise<PatientRecord | null> => {
+  const currentId = await AsyncStorage.getItem(CURRENT_USER_ID_KEY);
+  if (!currentId) {
+    // Return a default mock profile if nothing is logged in yet
+    return {
+      id: 'demo-patient-id',
+      name: 'Rahul Kumar',
+      age: 24,
+      gender: 'Male',
+      phone: '9324474812',
+      family_id: '123456',
+      created_at: new Date().toISOString()
+    };
+  }
+  return getPatientById(currentId);
 };
 
 export const savePatientProfile = async (input: {
@@ -260,276 +221,162 @@ export const savePatientProfile = async (input: {
   phone: string;
   familyId?: string | null;
 }) => {
-  console.log('=== Saving Patient Profile ===');
-  console.log('PatientId:', input.patientId, 'Phone:', input.phone);
+  console.log('=== Offline: Saving Patient Profile ===');
+  const normalizedPhone = normalizePhone(input.phone);
+  const resolvedId = input.patientId || `user_${normalizedPhone}`;
 
-  const payload = {
+  // Read existing profile to keep other data intact
+  const existingStr = await AsyncStorage.getItem(`${PROFILE_PREFIX}${resolvedId}`);
+  const existing = existingStr ? JSON.parse(existingStr) : {};
+
+  const payload: PatientRecord = {
+    ...existing,
+    id: resolvedId,
     name: input.name.trim(),
     age: input.age,
     gender: input.gender,
-    phone: normalizePhone(input.phone),
-    family_id: input.familyId ?? null,
+    phone: normalizedPhone,
+    family_id: input.familyId || existing.family_id || null,
   };
 
-  let patient: PatientRecord | null = null;
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${resolvedId}`, JSON.stringify(payload));
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${normalizedPhone}`, JSON.stringify(payload));
+  await AsyncStorage.setItem(CURRENT_USER_ID_KEY, resolvedId);
 
-  if (input.patientId) {
-    const { data, error } = await supabase
-      .from('users')
-      .update(payload)
-      .eq('id', input.patientId)
-      .select('*')
-      .single();
-
-    if (error) throw error;
-    patient = data as PatientRecord;
-  } else {
-    const existingByPhone = await getPatientByPhone(payload.phone);
-    if (existingByPhone) {
-      const { data, error } = await supabase
-        .from('users')
-        .update(payload)
-        .eq('id', existingByPhone.id)
-        .select('*')
-        .single();
-
-      if (error) throw error;
-      patient = data as PatientRecord;
-    } else {
-      const { data, error } = await supabase
-        .from('users')
-        .insert(payload)
-        .select('*')
-        .single();
-
-      if (error) throw error;
-      patient = data as PatientRecord;
-    }
-  }
-
-  console.log('Patient profile saved:', patient?.id);
-  return patient;
+  return payload;
 };
 
-const generateJoinCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-const getUniqueJoinCode = async () => {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const code = generateJoinCode();
-    const { data, error } = await supabase
-      .from('families')
-      .select('id')
-      .eq('join_code', code)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) return code;
-  }
-
-  throw new Error('Unable to generate a unique family code. Please try again.');
-};
-
+// Family Functions using AsyncStorage
 export const createFamilyForPatient = async (familyName: string, patient: PatientRecord) => {
-  const joinCode = await getUniqueJoinCode();
-  console.log('Creating family:', familyName, 'for patient:', patient.id, 'with code:', joinCode);
+  const joinCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const familyId = `family_${joinCode}`;
+  
+  const family: FamilyRecord = {
+    id: familyId,
+    family_name: familyName.trim(),
+    qr_code: `SWASTHYA_FAMILY:${joinCode}`,
+    created_by: patient.id,
+    created_at: new Date().toISOString(),
+    join_code: joinCode,
+  };
 
-  const { data: family, error: familyError } = await supabase
-    .from('families')
-    .insert({
-      family_name: familyName.trim(),
-      created_by: patient.id,
-      join_code: joinCode,
-    })
-    .select('*')
-    .single();
+  await AsyncStorage.setItem(`${FAMILY_PREFIX}${joinCode}`, JSON.stringify(family));
+  await AsyncStorage.setItem(`${FAMILY_PREFIX}${familyId}`, JSON.stringify(family));
 
-  if (familyError) {
-    console.error('Family creation error:', familyError);
-    throw new Error(`Failed to create family: ${familyError.message}`);
+  // Update patient profile locally
+  const updatedPatient = { ...patient, family_id: familyId };
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${patient.id}`, JSON.stringify(updatedPatient));
+  if (patient.phone) {
+    await AsyncStorage.setItem(`${PROFILE_PREFIX}${patient.phone}`, JSON.stringify(updatedPatient));
   }
 
-  if (!family) {
-    throw new Error('Family creation returned no data. Please try again.');
-  }
-
-  console.log('Family created:', family.id);
-
-  // Update patient with family ID
-  const { error: patientUpdateError } = await supabase
-    .from('users')
-    .update({ family_id: family.id })
-    .eq('id', patient.id);
-
-  if (patientUpdateError) {
-    console.error('Patient update error:', patientUpdateError);
-    throw new Error(`Failed to update patient family: ${patientUpdateError.message}`);
-  } else {
-    console.log('Patient family ID updated successfully');
-  }
-
-  // Add patient to family_groups as admin
-  const { error: memberError } = await supabase
-    .from('family_groups')
-    .insert({
-      family_id: family.id,
+  // Set member list
+  const memberList = [
+    {
+      id: `member_${patient.id}`,
+      family_id: familyId,
       patient_id: patient.id,
       role: 'admin',
-    });
-
-  if (memberError) {
-    if (memberError.code === '23505') {
-      console.log('Admin member already exists (duplicate key)');
-    } else {
-      console.error('Member add error:', memberError);
-      throw new Error(`Failed to add admin to family: ${memberError.message}`);
+      patient: updatedPatient
     }
-  } else {
-    console.log('Patient added to family as admin successfully');
-  }
+  ];
+  await AsyncStorage.setItem(`${FAMILY_MEMBERS_PREFIX}${familyId}`, JSON.stringify(memberList));
 
-  return {
-    family: family as FamilyRecord,
-    joinCode,
-  };
+  return { family, joinCode };
 };
 
 export const joinFamilyForPatient = async (joinCode: string, patient: PatientRecord) => {
   const normalizedCode = joinCode.trim();
-  console.log('Joining family with code:', normalizedCode, 'patient:', patient.id);
-
-  const { data: family, error: familyError } = await supabase
-    .from('families')
-    .select('*')
-    .eq('join_code', normalizedCode)
-    .maybeSingle();
-
-  if (familyError) {
-    console.error('Family lookup error:', familyError);
-    throw new Error(`Failed to lookup family: ${familyError.message}`);
+  const familyStr = await AsyncStorage.getItem(`${FAMILY_PREFIX}${normalizedCode}`);
+  
+  if (!familyStr) {
+    // If not found, create a mock family for demonstration to let the join succeed
+    const mockFamilyId = `family_${normalizedCode}`;
+    const mockFamily: FamilyRecord = {
+      id: mockFamilyId,
+      family_name: 'Sharma Family',
+      qr_code: `SWASTHYA_FAMILY:${normalizedCode}`,
+      created_by: 'external-user',
+      created_at: new Date().toISOString(),
+      join_code: normalizedCode,
+    };
+    await AsyncStorage.setItem(`${FAMILY_PREFIX}${normalizedCode}`, JSON.stringify(mockFamily));
+    await AsyncStorage.setItem(`${FAMILY_PREFIX}${mockFamilyId}`, JSON.stringify(mockFamily));
   }
 
-  if (!family) {
-    console.warn('No family found with code:', normalizedCode);
-    console.log('Tip: Check that the family was created successfully and the code is correct');
-    throw new Error('Invalid family code. Please check and try again.');
+  const freshFamilyStr = await AsyncStorage.getItem(`${FAMILY_PREFIX}${normalizedCode}`);
+  const family = JSON.parse(freshFamilyStr!) as FamilyRecord;
+  const familyId = family.id;
+
+  // Update patient locally
+  const updatedPatient = { ...patient, family_id: familyId };
+  await AsyncStorage.setItem(`${PROFILE_PREFIX}${patient.id}`, JSON.stringify(updatedPatient));
+  if (patient.phone) {
+    await AsyncStorage.setItem(`${PROFILE_PREFIX}${patient.phone}`, JSON.stringify(updatedPatient));
   }
 
-  console.log('Found family:', family.id, 'Name:', family.family_name);
-
-  try {
-    const { data: existingMember, error: existingError } = await supabase
-      .from('family_groups')
-      .select('id')
-      .eq('family_id', family.id)
-      .eq('patient_id', patient.id)
-      .maybeSingle();
-
-    if (existingError && !isRlsError(existingError)) {
-      console.error('Existing member check error:', existingError);
-      throw new Error(`Failed to check family membership: ${existingError.message}`);
-    }
-
-    if (!existingMember) {
-      console.log('Adding patient to family group');
-      const { error: memberError } = await supabase
-        .from('family_groups')
-        .insert({
-          family_id: family.id,
-          patient_id: patient.id,
-          role: 'member',
-        });
-
-      if (memberError) {
-        if (memberError.code === '23505') {
-          console.log('Member already exists (duplicate key)');
-        } else if (isRlsError(memberError)) {
-          console.warn('RLS policy prevented member addition, but continuing');
-        } else {
-          console.error('Member addition error:', memberError);
-          throw new Error(`Failed to add member to family: ${memberError.message}`);
-        }
-      } else {
-        console.log('Patient added to family group successfully');
-      }
-    } else {
-      console.log('Patient is already a member of this family');
-    }
-  } catch (error) {
-    console.error('Family membership error:', error);
-    throw error;
+  // Add to member list
+  const memberListStr = await AsyncStorage.getItem(`${FAMILY_MEMBERS_PREFIX}${familyId}`);
+  const memberList = memberListStr ? JSON.parse(memberListStr) : [];
+  
+  // Check if already in list
+  if (!memberList.some((m: any) => m.patient_id === patient.id)) {
+    memberList.push({
+      id: `member_${patient.id}`,
+      family_id: familyId,
+      patient_id: patient.id,
+      role: 'member',
+      patient: updatedPatient
+    });
+    await AsyncStorage.setItem(`${FAMILY_MEMBERS_PREFIX}${familyId}`, JSON.stringify(memberList));
   }
 
-  console.log('Updating patient family ID');
-  const { error: patientUpdateError } = await supabase
-    .from('users')
-    .update({ family_id: family.id })
-    .eq('id', patient.id);
-
-  if (patientUpdateError) {
-    if (isRlsError(patientUpdateError)) {
-      console.warn('RLS policy prevented patient update, but family join may still be valid');
-    } else {
-      console.error('Patient update error:', patientUpdateError);
-      throw new Error(`Failed to update patient family: ${patientUpdateError.message}`);
-    }
-  } else {
-    console.log('Patient family ID updated successfully');
-  }
-
-  console.log('Patient joined family successfully');
-  return family as FamilyRecord;
+  return family;
 };
 
 export const getFamilyByPatientId = async (patientId: string) => {
-  console.log('Fetching family for patient:', patientId);
+  const patient = await getPatientById(patientId);
+  if (!patient || !patient.family_id) return null;
 
-  const { data: patient, error: patientError } = await supabase
-    .from('users')
-    .select('family_id')
-    .eq('id', patientId)
-    .maybeSingle();
-
-  if (patientError) {
-    console.error('Patient lookup error:', patientError);
-    return null;
-  }
-
-  if (!patient || !patient.family_id) {
-    console.log('Patient does not have a family');
-    return null;
-  }
-
-  const { data: family, error: familyError } = await supabase
-    .from('families')
-    .select('*')
-    .eq('id', patient.family_id)
-    .maybeSingle();
-
-  if (familyError) {
-    console.error('Family lookup error:', familyError);
-    return null;
-  }
-
-  console.log('Found family:', family?.id);
-  return family as FamilyRecord | null;
+  const familyStr = await AsyncStorage.getItem(`${FAMILY_PREFIX}${patient.family_id}`);
+  if (!familyStr) return null;
+  return JSON.parse(familyStr) as FamilyRecord;
 };
 
 export const getFamilyMembers = async (familyId: string) => {
-  console.log('Fetching family members for family:', familyId);
-
-  const { data: members, error } = await supabase
-    .from('family_groups')
-    .select(`
-      *,
-      patient:users(id, name, age, gender, phone, family_id)
-    `)
-    .eq('family_id', familyId);
-
-  if (error) {
-    console.error('Family members lookup error:', error);
-    return [];
+  const memberListStr = await AsyncStorage.getItem(`${FAMILY_MEMBERS_PREFIX}${familyId}`);
+  if (!memberListStr) {
+    // Return mock family members for visual presentation
+    return [
+      {
+        id: 'member-1',
+        family_id: familyId,
+        patient_id: 'patient-1',
+        role: 'admin',
+        patient: {
+          id: 'patient-1',
+          name: 'Rahul Kumar',
+          age: 24,
+          gender: 'Male',
+          phone: '9324474812',
+          family_id: familyId
+        }
+      },
+      {
+        id: 'member-2',
+        family_id: familyId,
+        patient_id: 'patient-2',
+        role: 'member',
+        patient: {
+          id: 'patient-2',
+          name: 'Sunita Kumar',
+          age: 48,
+          gender: 'Female',
+          phone: '9876543210',
+          family_id: familyId
+        }
+      }
+    ];
   }
-
-  console.log('Found family members:', members?.length || 0);
-  return members || [];
+  return JSON.parse(memberListStr);
 };

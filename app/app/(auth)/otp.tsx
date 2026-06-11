@@ -130,8 +130,13 @@ export default function OTPVerifyScreen() {
     console.log('=== OTP Verification Started ===');
     console.log('Entered OTP:', otpCode);
     console.log('Phone Number:', phoneNumber);
+    console.log('Entered OTP Length:', otpCode.length);
+    console.log('Raw Code Array:', JSON.stringify(code));
+    console.log('EXPO_PUBLIC_SUPABASE_URL:', process.env.EXPO_PUBLIC_SUPABASE_URL);
+    console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY length:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.length || 0);
 
     if (otpCode.length !== 6) {
+      console.log('Verification cancelled: OTP length is not 6');
       Alert.alert('Error', 'Please enter the complete 6-digit OTP');
       return;
     }
@@ -140,6 +145,7 @@ export default function OTPVerifyScreen() {
 
     try {
       // Get the stored OTP for verification
+      console.log('Fetching stored OTP for phone:', phoneNumber);
       const storedOtp = await getStoredOTP(phoneNumber);
       console.log('Stored OTP:', storedOtp);
       console.log('Verification - Entered:', otpCode, 'Stored:', storedOtp, 'Match:', otpCode === storedOtp);
@@ -216,8 +222,16 @@ export default function OTPVerifyScreen() {
         });
       }
     } catch (error: any) {
-      console.error('Error verifying OTP:', error);
-      Alert.alert('Verification Failed', error?.message || 'Failed to verify OTP. Please try again.');
+      console.error('Error verifying OTP. Full error details:', error);
+      if (error && typeof error === 'object') {
+        console.error('Error message:', error?.message);
+        console.error('Error name:', error?.name);
+        console.error('Error stack:', error?.stack);
+        try {
+          console.error('Error JSON:', JSON.stringify(error));
+        } catch (_) {}
+      }
+      Alert.alert('Verification Failed', error?.message || String(error) || 'Failed to verify OTP. Please try again.');
       
       // Clear OTP on failure
       setCode(['', '', '', '', '', '']);
