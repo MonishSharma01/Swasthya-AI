@@ -86,11 +86,31 @@ const createMockSupabase = () => {
 export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://mmdhzvbjbnamepfiryra.supabase.co';
 export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tZGh6dmJqYm5hbWVwZmlyeXJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDc5NjYsImV4cCI6MjA5Njg4Mzk2Nn0.eGrsAyADnIp951edaSe6gHw2TdxfaFljw19vKoXmWW4';
 
-const isRealConfigured = true;
+// Custom SSR-safe storage adapter for Web / SSR environments
+const expoStorage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web' && typeof window === 'undefined') {
+      return null;
+    }
+    return AsyncStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === 'web' && typeof window === 'undefined') {
+      return;
+    }
+    return AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (Platform.OS === 'web' && typeof window === 'undefined') {
+      return;
+    }
+    return AsyncStorage.removeItem(key);
+  },
+};
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: AsyncStorage,
+    storage: expoStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

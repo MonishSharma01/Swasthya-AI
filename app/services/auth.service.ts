@@ -483,6 +483,17 @@ export const getStoredOTP = async (_phone: string): Promise<string | null> => '1
 export const clearStoredOTP = async (): Promise<void> => {};
 export const getRedirectUrl = (): string => '';
 
+// Helper to generate a unique 10-digit phone number deterministically from any ID
+export const generateDummyPhoneFromId = (id: string): string => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  const positiveHash = Math.abs(hash).toString();
+  return (positiveHash + '1234567890').slice(0, 10);
+};
+
 // Supabase Google Auth Flow
 export const signInWithGoogle = async (email?: string, name?: string) => {
   try {
@@ -521,6 +532,7 @@ export const signInWithGoogle = async (email?: string, name?: string) => {
               id: sessionData.user.id,
               full_name: fullName,
               email: sessionData.user.email,
+              phone_number: generateDummyPhoneFromId(sessionData.user.id),
               created_at: new Date().toISOString(),
             });
           }

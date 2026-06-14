@@ -64,7 +64,7 @@ export default function RootLayout() {
             if (sessionError) throw sessionError;
 
             if (sessionData.user) {
-              const { getPatientById } = require('@/services/auth.service');
+              const { getPatientById, generateDummyPhoneFromId } = require('@/services/auth.service');
               let dbPatient = await getPatientById(sessionData.user.id);
 
               if (!dbPatient) {
@@ -73,6 +73,7 @@ export default function RootLayout() {
                   id: sessionData.user.id,
                   full_name: fullName,
                   email: sessionData.user.email,
+                  phone_number: generateDummyPhoneFromId(sessionData.user.id),
                   created_at: new Date().toISOString(),
                 });
                 if (!insertError) {

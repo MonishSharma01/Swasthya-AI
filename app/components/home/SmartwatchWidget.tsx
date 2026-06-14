@@ -40,6 +40,9 @@ export const SmartwatchWidget: React.FC = () => {
 
   // Get the correct URL based on platform
   const getApiUrl = () => {
+    if (process.env.EXPO_PUBLIC_WATCH_URL) {
+      return `${process.env.EXPO_PUBLIC_WATCH_URL}/health?mode=normal`;
+    }
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:5000/health?mode=normal';
     }

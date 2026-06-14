@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { getCurrentPatient, normalizePhone } from '@/services/auth.service';
+import { getCurrentPatient, normalizePhone, generateDummyPhoneFromId } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import { CustomAlertModal } from '@/components/profile/CustomAlertModal';
 
@@ -408,7 +408,7 @@ export default function UserDetailsScreen() {
         id: resolvedId,
         full_name: name.trim(),
         age: parseInt(age),
-        phone_number: userPhone || null,
+        phone_number: userPhone || generateDummyPhoneFromId(resolvedId),
         gender: gender,
         location: location.trim(),
       };
