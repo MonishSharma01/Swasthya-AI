@@ -131,3 +131,82 @@ Authorization: Bearer <your-supabase-jwt-token>
 #### Verify Token (Utility)
 - **GET** `/api/auth/verify-token`
 - **Response**: Returns details of the verified user from the token.
+
+---
+
+## 🤖 Medical Assistant Chat & Summaries API
+
+### 1. Process Chat Message
+- **POST** `/chat/message`
+- **Payload**:
+  ```json
+  {
+    "patient_id": "patient-uuid",
+    "session_id": "session-id",
+    "message": "मुझे 3 दिन से सिरदर्द है"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "bot_reply": "सिरदर्द के बारे में बताने के लिए धन्यवाद। मैंने इसे नोट कर लिया है...",
+    "extracted_symptom": {
+      "symptom_name": "headache",
+      "body_zone": "head",
+      "duration_days": 3,
+      "severity": 5,
+      "onset": "gradual",
+      "status": "active",
+      "medication_mentions": [],
+      "confidence_score": 0.95
+    },
+    "medical_event": true
+  }
+  ```
+- **Description**: Evaluates symptoms using Llama 3 on Groq. Automatically stores/updates active symptoms in the `symptom_tracker` table and logs raw inputs/responses to `chat_events`.
+
+### 2. End Session & Generate Summary
+- **POST** `/chat/end-session`
+- **Payload**:
+  ```json
+  {
+    "patient_id": "patient-uuid",
+    "session_id": "session-id"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "daily_summary": "Patient reports gradual onset headache lasting 3 days...",
+    "urgency": "Normal",
+    "key_risks": "None detected",
+    "symptoms_today": ["headache"]
+  }
+  ```
+- **Description**: Fetches active symptoms and raw chat inputs, prompts Groq LLM to compile a concise clinical daily summary, and logs it in `daily_summaries`.
+
+### 3. Cron Job: Generate Daily Summaries
+- **POST** `/chat/cron/daily-summaries`
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "message": "Processed summaries for 1 active users",
+    "active_users_today": ["patient-uuid"]
+  }
+  ```
+- **Description**: Nightly process triggered at 11:59 PM to generate and save daily summaries for all active patients who chatted today but didn't finish their sessions.
+
+---
+
+## 🚀 Environment Variables (Render & Local)
+
+Add the following environment variables on your Render Dashboard or in `.env`:
+
+| Key | Description | Required / Optional |
+|---|---|---|
+| `SUPABASE_URL` | Your Supabase project URL | **Required** |
+| `SUPABASE_ANON_KEY` | Your Supabase anon public key | **Required** |
+| `DATABASE_URL` | Direct connection URL to Postgres database | **Required** |
+| `GROQ_API_KEY` | Groq console API key (Llama 3) | **Required** (Falls back to simulator if missing) |
+| `PORT` | Running port (Render injects this) | Optional (Defaults to 8000) |

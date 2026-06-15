@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth, profiles
+from routes import auth, profiles, chat
 import os
 
 app = FastAPI(
@@ -33,6 +33,7 @@ async def health_check():
 # Mount MVP Routers
 app.include_router(auth.router)
 app.include_router(profiles.router)
+app.include_router(chat.router)
 
 @app.get("/")
 async def root():
