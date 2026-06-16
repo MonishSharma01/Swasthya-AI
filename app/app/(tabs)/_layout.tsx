@@ -112,6 +112,18 @@ export default function TabLayout() {
   const leftTabs = TAB_CONFIG.slice(0, 2);
   const rightTabs = TAB_CONFIG.slice(2, 4);
 
+  // Animation value to slide bottom navbar out of view
+  const navBarAnim = useRef(new Animated.Value(activeTab === 4 ? 0 : 1)).current;
+
+  useEffect(() => {
+    Animated.timing(navBarAnim, {
+      toValue: activeTab === 4 ? 0 : 1,
+      duration: 350,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [activeTab]);
+
   const animateTabState = (tabIndex: number, isPressed: boolean) => {
     Animated.parallel([
       Animated.spring(tabScaleAnims[tabIndex], {
@@ -139,7 +151,23 @@ export default function TabLayout() {
       <Slot />
       
       {/* Bottom Navigation Bar */}
-      <View style={styles.navContainer}>
+      <Animated.View 
+        style={[
+          styles.navContainer,
+          {
+            opacity: navBarAnim,
+            transform: [
+              {
+                translateY: navBarAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [150, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+        pointerEvents={activeTab === 4 ? 'none' : 'auto'}
+      >
         <View style={styles.navbar}>
           <View style={styles.navContent}>
             {leftTabs.map((tab, idx) => {
@@ -248,7 +276,7 @@ export default function TabLayout() {
             />
           </View>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
