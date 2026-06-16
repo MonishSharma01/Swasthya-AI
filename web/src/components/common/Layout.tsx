@@ -22,8 +22,8 @@ const Layout: React.FC = () => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/medicine', label: 'Medicine' },
-    { path: '/scanner', label: 'Scanner' },
     { path: '/appointments', label: 'Appointments' },
+    { path: '/profile', label: 'Profile' },
   ];
 
   const handleLogout = () => {
@@ -49,23 +49,6 @@ const Layout: React.FC = () => {
     </svg>
   );
 
-  const ScannerIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-      <path d="M10 3v4" />
-      <path d="M14 3v4" />
-      <path d="M10 17v4" />
-      <path d="M14 17v4" />
-      <path d="M3 10h4" />
-      <path d="M17 10h4" />
-      <path d="M3 14h4" />
-      <path d="M17 14h4" />
-    </svg>
-  );
-
   const AppointmentsIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -81,12 +64,19 @@ const Layout: React.FC = () => {
     </svg>
   );
 
+  const ProfileIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+
   const getNavIcon = (label: string) => {
     switch(label) {
       case 'Dashboard': return <DashboardIcon />;
       case 'Medicine': return <MedicineIcon />;
-      case 'Scanner': return <ScannerIcon />;
       case 'Appointments': return <AppointmentsIcon />;
+      case 'Profile': return <ProfileIcon />;
       default: return null;
     }
   };
