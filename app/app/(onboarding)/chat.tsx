@@ -65,12 +65,12 @@ export default function OnboardingChatScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [profileData, setProfileData] = useState<Partial<ProfileData>>({
-    full_name: 'Rahul Kumar',
-    age: 24,
+    full_name: 'Indresh',
+    age: 20,
     gender: 'Male',
     blood_group: 'O+',
     height: '175cm',
-    weight: '70kg',
+    weight: '72kg',
     allergies: 'None',
     current_medication: 'None',
     chronic_diseases: 'None',
@@ -107,7 +107,7 @@ export default function OnboardingChatScreen() {
         const weightMatch = input.match(/(\d+)\s*(kg|lbs)?/i);
         return {
           height: heightMatch ? heightMatch[0] : '175cm',
-          weight: weightMatch ? weightMatch[0] : '70kg',
+          weight: weightMatch ? weightMatch[0] : '72kg',
         };
       },
     },
@@ -182,7 +182,6 @@ export default function OnboardingChatScreen() {
   ]);
 
   useEffect(() => {
-    // Load patient name from auth store if possible
     if (patientId) {
       getPatientById(patientId).then((record) => {
         if (record && record.name) {
@@ -213,7 +212,6 @@ export default function OnboardingChatScreen() {
     const trimmed = textToSend.trim();
     if (!trimmed) return;
 
-    // Add user message
     const userMsg: Message = {
       id: `user-${Date.now()}`,
       text: trimmed,
@@ -224,19 +222,16 @@ export default function OnboardingChatScreen() {
     setInputText('');
     Keyboard.dismiss();
 
-    // Process current step data
     const activeStep = steps[currentStep];
     const parsedFields = activeStep.fieldParser(trimmed);
     const updatedData = { ...profileData, ...parsedFields };
     setProfileData(updatedData);
 
-    // Transition to next step
     const nextStepIndex = currentStep + 1;
     if (nextStepIndex < steps.length) {
       setCurrentStep(nextStepIndex);
       addBotReply(steps[nextStepIndex].question);
     } else {
-      // Completed onboarding chat
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
@@ -264,10 +259,31 @@ export default function OnboardingChatScreen() {
   };
 
   const handleSkipAll = () => {
-    // Navigate straight to summary with current (partially filled or default) profile data
+    const fakeProfileData = {
+      full_name: 'Indresh',
+      age: 20,
+      gender: 'Male',
+      blood_group: 'O+',
+      height: '175cm',
+      weight: '72kg',
+      allergies: 'Penicillin',
+      current_medication: 'None',
+      chronic_diseases: 'Migraine, Anxiety',
+      family_history: 'None',
+      smoking: 'Non-smoker',
+      alcohol: 'Never',
+      emergency_contact: 'None',
+      surgeries: 'None',
+      vaccinations: 'COVID-19, Tetanus',
+    };
+    
+    setSessionState({
+      hasProfile: true,
+    });
+    
     router.push({
       pathname: '/(onboarding)/summary',
-      params: { profileData: JSON.stringify(profileData) },
+      params: { profileData: JSON.stringify(fakeProfileData) },
     });
   };
 
@@ -377,6 +393,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#07111f',
+    paddingTop: Platform.OS === 'ios' ? 0 : 30, // Add top padding for Android
   },
   header: {
     flexDirection: 'row',

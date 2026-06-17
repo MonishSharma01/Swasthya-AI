@@ -24,7 +24,7 @@ import { signUp, signIn, signInWithGoogle } from '@/services/auth.service';
 
 const { width, height } = Dimensions.get('window');
 
-// ── Design tokens — same palette as the rest of Swasthya AI ──────────────────
+// ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
   primary: '#0474FC',
   primaryDark: '#0355C5',
@@ -317,7 +317,6 @@ export default function LoginScreen() {
         isLoggedIn: true,
         hasProfile: false,
         hasFamilyGroup: false,
-        onboardingComplete: false,
       });
       router.replace('/');
     } catch (e: any) {
@@ -352,6 +351,21 @@ export default function LoginScreen() {
     }
   };
 
+  // ── Skip Handler ────────────────────────────────────────────────────────────
+  const handleSkip = () => {
+    setSessionState({
+      userId: 'skip-user-123',
+      patientId: 'skip-patient-123',
+      phoneNumber: '+91 9999999999',
+      isLoggedIn: true,
+      hasProfile: false,
+      hasFamilyGroup: false,
+      isHydrated: true,
+      hasShownIntro: true,
+    });
+    router.replace('/(onboarding)/family-setup');
+  };
+
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <View style={s.root}>
@@ -365,6 +379,18 @@ export default function LoginScreen() {
       {/* Floating orbs */}
       <Animated.View style={[s.orb, s.orb1, { transform: [{ translateY: orb1Y }, { scale: orb1S }] }]} />
       <Animated.View style={[s.orb, s.orb2, { transform: [{ translateY: orb2Y }, { scale: orb2S }] }]} />
+
+      {/* Skip Button */}
+      <TouchableOpacity style={s.skipButton} onPress={handleSkip} activeOpacity={0.8}>
+        <LinearGradient
+          colors={['#10B981', '#059669']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.skipButtonGradient}
+        >
+          <Text style={s.skipButtonText}>Skip →</Text>
+        </LinearGradient>
+      </TouchableOpacity>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -642,6 +668,32 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 40,
     minHeight: height,
+  },
+
+  // Skip Button
+  skipButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    right: 20,
+    zIndex: 100,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  skipButtonGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  skipButtonText: {
+    fontFamily: FONT.semibold,
+    fontSize: 14,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 
   // Orbs

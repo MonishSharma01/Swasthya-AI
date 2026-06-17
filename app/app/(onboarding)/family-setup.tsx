@@ -47,6 +47,21 @@ export default function FamilySetupScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
+  // ── Skip Handler ──────────────────────────────────────────────────────────────
+  const handleSkip = () => {
+    setSessionState({
+      userId: 'skip-user-123',
+      patientId: 'skip-patient-123',
+      phoneNumber: '+91 9999999999',
+      isLoggedIn: true,
+      hasProfile: false,
+      hasFamilyGroup: true,
+      isHydrated: true,
+      hasShownIntro: true,
+    });
+    router.push('/(onboarding)/chat');
+  };
+
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -75,7 +90,6 @@ export default function FamilySetupScreen() {
       }
     }
 
-    // If patient record doesn't exist in DB, create/upsert it to avoid foreign key errors in family association
     if (patientId) {
       console.log('Patient record missing in DB. Auto-creating basic profile row...');
       try {
@@ -108,7 +122,6 @@ export default function FamilySetupScreen() {
       }
     }
 
-    // If we reach here and have a phone number, create a temporary patient object
     if (phoneNumber) {
       console.log('Creating temporary patient from phone:', phoneNumber);
       return {
@@ -193,7 +206,6 @@ export default function FamilySetupScreen() {
     }
   };
 
-
   const handleQRScan = async () => {
     if (!permission?.granted) {
       const { granted } = await requestPermission();
@@ -212,14 +224,11 @@ export default function FamilySetupScreen() {
       
       let code = '';
       
-      // Try different patterns to extract the 6-digit code
-      // Pattern 1: SWASTHYA_FAMILY:XXXXXX
       let match = scannedCode.match(/SWASTHYA_FAMILY[:\s]+(\d{6})/i);
       if (match) {
         code = match[1];
       }
       
-      // Pattern 2: Just 6 digits (exact match)
       if (!code) {
         match = scannedCode.match(/^(\d{6})$/);
         if (match) {
@@ -227,7 +236,6 @@ export default function FamilySetupScreen() {
         }
       }
       
-      // Pattern 3: 6 digits anywhere in the string (last resort)
       if (!code) {
         match = scannedCode.match(/(\d{6})/);
         if (match) {
@@ -235,7 +243,6 @@ export default function FamilySetupScreen() {
         }
       }
       
-      // Validate the code format
       if (!code || code.length !== CODE_LENGTH || !/^\d{6}$/.test(code)) {
         Alert.alert(
           'Invalid QR Code',
@@ -257,7 +264,6 @@ export default function FamilySetupScreen() {
       setCodeDigits(newDigits);
       setShowQRScanner(false);
       
-      // Auto-join after scanning if code is complete
       if (newDigits.every(d => d !== '')) {
         setTimeout(() => handleJoinFlow(), 500);
       }
@@ -303,8 +309,6 @@ export default function FamilySetupScreen() {
 
   const copyToClipboard = async (code: string) => {
     try {
-      // expo-clipboard is optional in this project, so load it only when available.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Clipboard = require('expo-clipboard');
       await Clipboard.setStringAsync(code);
       Alert.alert('Copied!', 'Family code copied to clipboard');
@@ -334,7 +338,7 @@ export default function FamilySetupScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Header */}
+            {/* Header with Skip Button */}
             <View style={styles.header}>
               <TouchableOpacity
                 onPress={handleBack}
@@ -344,7 +348,20 @@ export default function FamilySetupScreen() {
                 <Ionicons name="arrow-back" size={24} color="#ffffff" />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Swasthya AI</Text>
-              <View style={styles.headerSpacer} />
+              <TouchableOpacity
+                onPress={handleSkip}
+                style={styles.skipHeaderButton}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.skipHeaderGradient}
+                >
+                  <Text style={styles.skipHeaderText}>Skip →</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
 
             {/* Step Indicator */}
@@ -446,7 +463,6 @@ export default function FamilySetupScreen() {
                     <Text style={styles.qrButtonText}>Scan QR</Text>
                   </TouchableOpacity>
 
-                  {/* Join Button */}
                   <TouchableOpacity
                     style={[
                       styles.joinButton,
@@ -684,7 +700,27 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     letterSpacing: 0.5,
   },
-  headerSpacer: { width: 40 },
+  // Skip Header Button
+  skipHeaderButton: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  skipHeaderGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  skipHeaderText: {
+    color: '#FFFFFF',
+    fontFamily: TYPOGRAPHY.fonts.semibold,
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
 
   // Step Indicator
   stepContainer: {

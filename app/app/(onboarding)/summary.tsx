@@ -12,28 +12,28 @@ export default function SummaryScreen() {
   const params = useLocalSearchParams<{ profileData?: string }>();
   const { patientId, phoneNumber, setSessionState } = useAuthStore();
   
-  const [userName, setUserName] = useState('Rahul Kumar');
-  const [userEmail, setUserEmail] = useState('user@example.com');
+  const [userName, setUserName] = useState('Indresh');
+  const [userEmail, setUserEmail] = useState('indresh@example.com');
   const [familyDetails, setFamilyDetails] = useState<{ name: string; code: string } | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   let profile = {
-    full_name: 'Rahul Kumar',
-    age: 24,
+    full_name: 'Indresh',
+    age: 20,
     gender: 'Male',
     blood_group: 'O+',
     height: '175cm',
-    weight: '70kg',
-    allergies: 'None',
+    weight: '72kg',
+    allergies: 'Penicillin',
     current_medication: 'None',
-    chronic_diseases: 'None',
-    family_history: 'None',
+    chronic_diseases: 'Migraine, Anxiety',
+    family_history: 'Father - Hypertension, Mother - Diabetes',
     smoking: 'Non-smoker',
     alcohol: 'Never',
-    emergency_contact: 'None',
+    emergency_contact: '+91 9876543210',
     surgeries: 'None',
-    vaccinations: 'Up to date',
+    vaccinations: 'COVID-19, Tetanus',
   };
 
   if (params.profileData) {
@@ -76,21 +76,18 @@ export default function SummaryScreen() {
   const handleLaunch = async () => {
     setIsSaving(true);
     try {
-      // Update patient profile in Supabase
       await savePatientProfile({
-        patientId: patientId,
+        patientId: patientId || 'skip-user-123',
         name: userName || profile.full_name,
-        age: parseInt(String(profile.age), 10) || 24,
+        age: parseInt(String(profile.age), 10) || 20,
         gender: profile.gender || 'Male',
-        phone: phoneNumber,
+        phone: phoneNumber || '+91 9324474812',
       });
 
-      // Update store state so index.tsx routes to dashboard
       setSessionState({
         hasProfile: true,
       });
 
-      // Navigate to tabs home
       router.replace('/(tabs)/home');
     } catch (err: any) {
       console.error('Error launching app from summary', err);
@@ -112,11 +109,15 @@ export default function SummaryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#07111f" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Verify Profile Configuration</Text>
-      </View>
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Verify Profile Configuration</Text>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.successCard}>
           <View style={styles.successIcon}>
             <Ionicons name="shield-checkmark" size={44} color="#10B981" />
@@ -133,18 +134,16 @@ export default function SummaryScreen() {
           <View style={styles.grid}>
             <View style={styles.gridItem}>
               <Text style={styles.label}>Patient Name</Text>
-              <Text style={styles.val}>{userName}</Text>
+              <Text style={styles.val}>{userName || 'Indresh'}</Text>
             </View>
             <View style={styles.gridItem}>
               <Text style={styles.label}>Email Address</Text>
-              <Text style={styles.val}>{userEmail}</Text>
+              <Text style={styles.val}>{userEmail || 'indresh@example.com'}</Text>
             </View>
-            {phoneNumber && (
-              <View style={styles.gridItem}>
-                <Text style={styles.label}>Phone Number</Text>
-                <Text style={styles.val}>{phoneNumber}</Text>
-              </View>
-            )}
+            <View style={styles.gridItem}>
+              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.val}>{phoneNumber || '+91 9324474812'}</Text>
+            </View>
             {familyDetails && (
               <View style={styles.gridItem}>
                 <Text style={styles.label}>Family Group</Text>
@@ -213,6 +212,14 @@ export default function SummaryScreen() {
                 <Text style={styles.listVal}>{profile.vaccinations}</Text>
               </View>
             </View>
+
+            <View style={styles.listItem}>
+              <Ionicons name="people-outline" size={18} color="#8B5CF6" />
+              <View style={styles.listItemTextContainer}>
+                <Text style={styles.listLabel}>Family History</Text>
+                <Text style={styles.listVal}>{profile.family_history}</Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -236,6 +243,9 @@ export default function SummaryScreen() {
             )}
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* Bottom padding spacer */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -371,5 +381,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Poppins_700Bold',
     fontSize: 16,
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });
