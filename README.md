@@ -3,7 +3,8 @@
 > A multilingual, voice-enabled health memory system. Patients build a connected health graph over time through natural conversation; doctors get instant, explainable context the moment they scan a patient's QR.
 
 Read [`Swasthya_AI.md`](docs/Swasthya_AI.md) first for the full idea.
-https://swasthya-ai-sage.vercel.app/about
+
+🌐 Live Demo: [Swasthya AI About Page](https://swasthya-ai-sage.vercel.app/about)
 
 ---
 
