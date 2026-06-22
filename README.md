@@ -5,7 +5,7 @@
 Read [`Swasthya_AI.md`](docs/Swasthya_AI.md) first for the full idea.
 
 🌐 Live Demo: [Swasthya AI About Page](https://swasthya-ai-sage.vercel.app/about)
-
+🌐 Live Demo: [Swasthya AI Base-44](https://swasthya-smart-care.base44.app)
 ---
 
 ## What's In This Repo
@@ -153,4 +153,4 @@ This project is built to satisfy five tracks simultaneously — see [`Tracks/`](
 - **Neo4j AuraDB** — the health graph is the core reasoning layer, not a side feature
 - **Sarvam AI** — voice is a primary interaction mode, not a bolt-on
 - **Render Workflows** — multi-stage agent pipelines run as orchestrated workflows
-- **Base44** — early prototype, link pending (see `Tracks/BASE44_TRACK.md`)
+- **Base44** — early prototype (see `Tracks/BASE44_TRACK.md`)
